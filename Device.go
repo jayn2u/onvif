@@ -145,6 +145,22 @@ func GetAvailableDevicesAtSpecificEthernetInterface(interfaceName string) ([]Dev
 	return nvtDevices, nil
 }
 
+// GetAvailableDevicesAuto discovers NVT devices without requiring the caller
+// to know the OS-assigned interface name ahead of time. It picks the sending
+// interface dynamically (see wsdiscovery.SelectInterface) instead of relying
+// on a hardcoded interface name, which is unreliable across devices where
+// the physical Ethernet port maps to a different interface name depending on
+// the OS image (e.g. NVIDIA Jetson / JetPack upgrades).
+//
+// cameraSubnetCIDR identifies the camera network, e.g. "192.168.1.0/24".
+func GetAvailableDevicesAuto(cameraSubnetCIDR string) ([]Device, error) {
+	interfaceName, err := wsdiscovery.SelectInterface(cameraSubnetCIDR)
+	if err != nil {
+		return nil, err
+	}
+	return GetAvailableDevicesAtSpecificEthernetInterface(interfaceName)
+}
+
 func (dev *Device) getSupportedServices(resp *http.Response) error {
 	doc := etree.NewDocument()
 
